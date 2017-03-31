@@ -177,8 +177,7 @@ a {text-decoration: none}
             char = html.escape(parcel['art'][y%self.parcelheight][x%self.parcelwidth])
             linkchar = parcel['linkmap'][y%self.parcelheight][x%self.parcelwidth]
             if linkchar in parcel["links"]:
-                url = parcel["links"][linkchar]
-                # TODO: escape special characters in url
+                url = html.escape(parcel["links"][linkchar], True)
                 return '<a href="%s">%s</a>' % (url, char)
             else:
                 return char
