@@ -1,0 +1,139 @@
+<html>
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+<h1>Tilde Town Cadastre</h1>
+<p>
+View the town map here: <a href="town.html">town.html</a><br />
+You can also use the <a href="town.json">JSON data</a> to make your own viewer.
+</p>
+<p>
+The source code can be found on github: <a href="https://github.com/jmdejong/cadastre">github.com/jmdejong/cadastre</a>
+</p>
+<p>
+The idea of Cadastre is to make a visualizaton of tilde.town by letting all users make their own ascii art home and stitch this together.
+</p>
+<p>
+All tilde.town users can claim a parcel of 24 by 12 characters.
+This is then placed in the town map at the place the users claimed (if this place is free).
+The town map is updated every minute.
+</p>
+<h2>How to claim a parcel</h2>
+<p>
+To claim your own piece of land, create a folder in your home directory called '.cadastre'.
+In this folder, create a file called 'home.txt'.<br />
+The first line of home.txt should contain two space-separated positive integers.
+The next 12 lines should contain your ascii art.<br />
+The lines should be 24 characters long.
+Longer lines will be cropped, shorter lines will be padded with spaces.<br />
+Only printable ascii characters may be used.
+Other characters (including tabs and newlines) will be replaced with spaces.
+</p>
+<p>
+If your home.txt is not correct, or if the place you are trying to claim is claimed already, your home will be ignored.<br />
+You could look in <a href="http://tilde.town/~troido/cadastre.log">cadastre.log</a> to get an idea what happened
+</p>
+<p>
+An example for ~/.cadastre/home.txt:
+<pre>
+0 1
++==()=================+.
+| (%&8)  /\       _,__|.
+|(&(%)%)/  \    . __,_|.
+| (%8%)/_##_\   .     |.
+|  ||/ |    |   . @   |.
+|  ||  | /\ | * . @   |.
+|  ||  |_||_|   .     |.
+|        ..  *  .     |.
+| (%) O  ........     |.
+|        ..    ~troido|.
++=======#  #==========+.
+........................
+</pre>
+</p>
+<h2>How to link to some page</h2>
+<p>
+You can link to any page, letting the user enter your house/cave/whatever.<br >
+To do this, leave one line empty after your ascii art image.
+Then, create another 24 by 12 image. Each of the characters in the image corresponds to a link.
+After that, create a line per link.
+These lines should consist of 1 character from your second drawing, followed by a space, followed by a url.
+</p>
+<p>
+It is probably easier to understand if I give an example:
+<pre>
+0 1
++==()=================+.
+| (%&8)  /\       _,__|.
+|(&(%)%)/  \    . __,_|.
+| (%8%)/_##_\   .     |.
+|  ||/ |    |   . @   |.
+|  ||  | /\ | * . @   |.
+|  ||  |_||_|   .     |.
+|        ..  *  .     |.
+| (%) O  ........     |.
+|        ..    ~troido|.
++=======#  #==========+.
+........................
+
+,,,,,,,,,,,,,,,,,,,,,,,-
+,,,,,,,,,HH,,,,,,,,,,,,-
+,,,,,,,,HHHH,,,,,,,,,,,-
+,,,,,,,HHHHHH,,,,,,,,,,-
+,,,,,,,HHHHHH,,,,,,,,,,-
+,,,,,,,HHHHHH,,,,,,,,,,-
+,,,,,,,HHHHHH,,,,,,,,,,-
+,,,,,,,,,,,,,,,,,,,,,,,-
+,,,,,,,,,,,,,,,,,,,,,,,-
+,,,,,,,,,,,,,,,,,,,,,,,-
+,,,,,,,,,,,,,,,,,,,,,,,-
+------------------------
+H http://tilde.town/~troido/index.html
+, http://tilde.town/~troido/cadastre/town.html
+</pre>
+Each place where there is a comma in the second drawing will now link to http://tilde.town/~troido/cadastre/town.html<br />
+Each place where there is an H will link to http://tilde.town/~troido/index.html<br />
+The other places aren't links
+</p>
+<p>
+It is also possible to leave out the second drawing, and have all characters from the first drawing directly correspond to the link.<br />
+To do so, put a minus sign in the line after the first drawing (that should otherwise be empty.<br />
+For example:
+<pre>
+5 1
+####################
+#  ____            #
+# / \__\           #
+# |_|__|    ,,,,,  #
+#           ,,,,,  #
+#    -----  ,,,,,  #
+#    -----     _   #
+#    -----    (*)  #
+# ~johndoe     |   #
+##########(%)#######
+...........|........
+....................
+-
+# https://example.com
+</pre>
+Now only the fence will link to https://example.com
+</p>
+<h2>Other tips</h2>
+<p>
+If you have a parcel and claim another parcel, you old parcel will become free to claim again.
+However, until anyone has done so, or I reset the unclaimed parts, your art will stay there.
+</p>
+<p>
+You can set up a cron job to automatically let your parcel change throughout the day
+</p>
+<p>
+You can leave any suggestions in the publicly editable suggestions.txt, or you can mail them to me, or mention them on github.
+</p>
+<br />
+<br />
+<p>
+Made by ~troido
+</p>
+</body>
+</html>
