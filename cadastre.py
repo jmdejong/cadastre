@@ -11,14 +11,15 @@ import html
 
 # set this to "home" in testing environment, and to "/home" when running for real
 # todo: find a way to do this automatic
-usersdir = "home"
+usersdir = "/home"
 
 parcelfileprefix = ".cadastre"
 
 backgroundchars = ",,..''``\"" + ' '*100
 
 # backslash which escapes the screen and enters your brain?
-regex = '[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\\\\\]^_`{|}~ ]'
+regex = '[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\\\\\]^_`{|}~ ─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯▰▱▲△▴▵▶▷▸▹►▻▼▽▾▿◀◁◂◃◄◅◆◇◈◉◊○◌◍◎●◐◑◒◓◔◕◖◗◘◙◚◛◜◝◞◟◠◡◢◣◤◥◦◧◨◩◪◫◬◭◮◯◰◱◲◳◴◵◶◷◸◹◺◻◼◽◾◿☀☁☂☃☄★☆☇☈☉☊☋☌☍☎☏☐☑☒☓☔☕☖☗☘☙☚☛☜☝☞☟☠☡☢☣☤☥☦☧☨☩☪☫☬☭☮☯☰☱☲☳☴☵☶☷☸☹☺☻☼☽☾☿♀♁♂♃♄♅♆♇♈♉♊♋♌♍♎♏♐♑♒♓♔♕♖♗♘♙♚♛♜♝♞♟♠♡♢♣♤♥♦♧♨♩♪♫♬♭♮♯♰♱♲♳♴♵♶♷♸♹♺♻♼♽♾♿⚀⚁⚂⚃⚄⚅⚆⚇⚈⚉⚊⚋⚌⚍⚎⚏⚐⚑⚒⚓⚔⚕⚖⚗⚘⚙⚚⚛⚜⚝⚞⚟⚠⚡⚢⚣⚤⚥⚦⚧⚨⚩⚪⚫⚬⚭⚮⚯⚰⚱⚲⚳⚴⚵⚶⚷⚸⚹⚺⚻⚼⚽⚾⚿⛀⛁⛂⛃⛄⛅⛆⛇⛈⛉⛊⛋⛌⛍⛎⛏⛐⛑⛒⛓⛔⛕⛖⛗⛘⛙⛚⛛⛜⛝⛞⛟⛠⛡⛢⛣⛤⛥⛦⛧⛨⛩⛪⛫⛬⛭⛮⛯⛰⛱⛲⛳⛴⛵⛶⛷⛸⛹⛺⛻⛼⛽⛾⛿✀✁✂✃✄✅✆✇✈✉✊✋✌✍✎✏✐✑✒✓✔✕✖✗✘✙✚✛✜✝✞✟✠✡✢✣✤✥✦✧✨✩✪✫✬✭✮✯✰✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿❀❁❂❃❄❅❆❇❈❉❊❋❌❍❎❏❐❑❒❓❔❕❖❗❘❙❚❛❜❝❞❟❠❡❢❣❤❥❦❧❨❩❪❫❬❭❮❯❰❱❲❳❴❵❶❷❸❹❺❻❼❽❾❿➀➁➂➃➄➅➆➇➈➉➊➋➌➍➎➏➐➑➒➓➔➕➖➗➘➙➚➛➜➝➞➟➠➡➢➣➤➥➦➧➨➩➪➫➬➭➮➯➰➱➲➳➴➵➶➷➸➹➺➻➼➽➾➿⟀⟁⟂⟃⟄⟅⟆⟇⟈⟉⟊⟋⟌⟍⟎⟏⟐⟑⟒⟓⟔⟕⟖⟗⟘⟙⟚⟛⟜⟝⟞⟟⟠⟡⟢⟣⟤⟥⟦⟧⟨⟩⟪⟫⟬⟭⟮⟯⟰⟱⟲⟳⟴⟵⟶⟷⟸⟹⟺⟻⟼⟽⟾⟿]'
+
 # this regex is necessary to filter out tabs, newlines and control characters
 # if a character would have a different size, it would fuck up all other parcels on that line
 replacechars = re.compile(regex)
@@ -63,6 +64,7 @@ class Cadastre:
     
     def update(self):
         
+        self.loadParcel("*****",os.path.join(sys.path[0], "adminparcel.txt"))
         for user in os.listdir(usersdir):
             parcel = os.path.join(usersdir, user, parcelfileprefix, self.parcelfile)
             if os.path.isfile(parcel):
@@ -92,8 +94,10 @@ class Cadastre:
                     # read the mapping of what character corresponds to what link
                     links = {}
                     for line in f:
-                        char, url = line.split(' ')
-                        links[char] = url
+                        s = line.split(' ')
+                        if len(s) == 2:
+                            char, url = s
+                            links[char] = url
                     
                     self.places[place] = {
                         "owner": user,
@@ -175,10 +179,13 @@ a {text-decoration: none}
         if place in self.places:
             parcel = self.places[place]
             char = html.escape(parcel['art'][y%self.parcelheight][x%self.parcelwidth])
-            linkchar = parcel['linkmap'][y%self.parcelheight][x%self.parcelwidth]
-            if linkchar in parcel["links"]:
-                url = html.escape(parcel["links"][linkchar], True)
-                return '<a href="%s">%s</a>' % (url, char)
+            if 'linkmap' in parcel:
+                linkchar = parcel['linkmap'][y%self.parcelheight][x%self.parcelwidth]
+                if linkchar in parcel["links"]:
+                    url = html.escape(parcel["links"][linkchar], True)
+                    return '<a href="%s">%s</a>' % (url, char)
+                else:
+                    return char
             else:
                 return char
         else:

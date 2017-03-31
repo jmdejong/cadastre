@@ -1,0 +1,29 @@
+1 2
+╔══════════════════════╗
+║ Tilde.town Cadastre  ║
+║                      ║
+║ Any tilde.town user  ║
+║ can claim a parcel   ║
+║ of land to show some ║
+║ awesome ascii art    ║
+║                      ║
+║ * Instructions       ║
+║ * source (github)    ║
+║      Made by ~Troido ║
+╚══════════════════════╝
+
+~~~~~~~~~~~~~~~~~~~~~~~~
+~ Tilde.town Cadastre  ~
+~                      ~
+~ Any tilde.town user  ~
+~ can claim a parcel   ~
+~ of land to show some ~
+~ awesome ascii art    ~
+~                      ~
+~ * 111111111111       ~
+~ * 222222222222222    ~
+~      Made by 3333333 ~
+~~~~~~~~~~~~~~~~~~~~~~~~
+1 http://tilde.town/~troido/cadastre
+2 https://github.com/jmdejong/cadastre
+3 http://tilde.town/~troido/index.html
