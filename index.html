@@ -16,7 +16,11 @@ The idea of Cadastre is to make a visualizaton of tilde.town by letting all user
 </p>
 <p>
 All tilde.town users can claim a parcel of 24 by 12 characters.
-This is then placed in the town map at the place the users claimed (if this place is free).
+This is then placed in the town map at the place the users claimed (if this place is free).<br />
+In addition to users own parcels, it is possible to make public parcels.
+Parcels belonging to users can override public parcels.
+</p>
+<p>
 The town map is updated every minute.
 </p>
 <h2>How to claim a parcel</h2>
@@ -77,23 +81,23 @@ It is probably easier to understand if I give an example:
 +=======#  #==========+.
 ........................
 
-,,,,,,,,,,,,,,,,,,,,,,,-
-,,,,,,,,,HH,,,,,,,,,,,,-
-,,,,,,,,HHHH,,,,,,,,,,,-
-,,,,,,,HHHHHH,,,,,,,,,,-
-,,,,,,,HHHHHH,,,,,,,,,,-
-,,,,,,,HHHHHH,,,,,,,,,,-
-,,,,,,,HHHHHH,,,,,,,,,,-
-,,,,,,,,,,,,,,,,,,,,,,,-
-,,,,,,,,,,,,,,,,,,,,,,,-
-,,,,,,,,,,,,,,,,,,,,,,,-
-,,,,,,,,,,,,,,,,,,,,,,,-
+22222222222222222222222-
+22222222211222222222222-
+22222222111122222222222-
+22222221111112222222222-
+22222221111112222222222-
+22222221111112222222222-
+22222221111112222222222-
+22222222222222222222222-
+22222222222222222222222-
+22222222222222211111112-
+22222222222222222222222-
 ------------------------
-H http://tilde.town/~troido/index.html
-, http://tilde.town/~troido/cadastre/town.html
+1 http://tilde.town/~troido/index.html
+2 http://tilde.town/~troido/cadastre/town.html
 </pre>
-Each place where there is a comma in the second drawing will now link to http://tilde.town/~troido/cadastre/town.html<br />
-Each place where there is an H will link to http://tilde.town/~troido/index.html<br />
+Each place where there is a 2 in the second drawing will now link to http://tilde.town/~troido/cadastre/town.html<br />
+Each place where there is an 1 will link to http://tilde.town/~troido/index.html<br />
 The other places aren't links
 </p>
 <p>
@@ -119,6 +123,13 @@ For example:
 </pre>
 Now only the fence will link to https://example.com
 </p>
+<h2>Public parcels</h2>
+It is possible create public parcels by making text files in the ~troido/cadastre/public folder.
+Any file in this folder ending in '.txt' will be seen as a parcel.<br />
+Public parcels can be edited by anyone.<br />
+A public parcel can use some land, but does not really 'claim' it.
+The data can be overwritten, and other users can still claim the place.
+</p>
 <h2>Other tips</h2>
 <p>
 If you have a parcel and claim another parcel, you old parcel will become free to claim again.
@@ -126,6 +137,10 @@ However, until anyone has done so, or I reset the unclaimed parts, your art will
 </p>
 <p>
 You can set up a cron job to automatically let your parcel change throughout the day
+</p>
+<h2>Development</h2>
+<p>
+I have several ideas for further development in <a href="https://tilde.town/~troido/cadastre/ideas.txt">ideas.txt</a>. I would love some feedback on those ideas.
 </p>
 <p>
 You can leave any suggestions in the publicly editable suggestions.txt, or you can mail them to me, or mention them on github.
