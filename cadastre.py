@@ -65,13 +65,13 @@ class Cadastre:
     
     def update(self):
         
-        self.loadParcel("*****",os.path.join(sys.path[0], "adminparcel.txt"))
+        self.loadParcel("*****",os.path.join(sys.path[0], "adminparcel.prcl"))
         for user in os.listdir(usersdir):
             parcel = os.path.join(usersdir, user, parcelfileprefix, self.parcelfile)
             if os.path.isfile(parcel):
                 self.loadParcel(user, parcel)
         for filename in os.listdir(publicdir):
-            if filename[-4:] == ".txt":
+            if filename[-5:] == ".prcl":
                 self.loadParcel(None, os.path.join(publicdir, filename))
             
     
