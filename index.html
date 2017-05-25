@@ -28,6 +28,8 @@ The town map is updated every minute.
 To claim your own piece of land, create a folder in your home directory called '.cadastre'.
 In this folder, create a file called 'home.txt'.<br />
 The first line of home.txt should contain two space-separated positive integers.
+This will be the coordinates of your parcel (first horizontal then vertical; coordinates start at 0)<br />
+Your x coodinates must be larger than or equal to 0 and smaller than 25 to show up in the normal viewer.<br />
 The next 12 lines should contain your ascii art.<br />
 The lines should be 24 characters long.
 Longer lines will be cropped, shorter lines will be padded with spaces.<br />
@@ -144,19 +146,18 @@ For example, if you have a park with moving animals, name the parcel 'park_scrip
 </p>
 <h2>Other tips</h2>
 <p>
-If you have a parcel and claim another parcel, your old parcel will become free to claim again.
-However, until anyone has done so, or I reset the unclaimed parts, your art will stay there.
-</p>
-<p>
 You can set up a cron job to automatically let your parcel change throughout the day
 </p>
-<h2>Development</h2>
+<h2>Development and Support</h2>
 <p>
-I have several ideas for further development in <a href="https://tilde.town/~troido/cadastre/ideas.txt">ideas.txt</a>. I would love some feedback on those ideas.
+I'm not really sure how to continue with this project, so I would love to hear other people's ideas.
 </p>
 <p>
-You can leave any suggestions in the publicly editable suggestions.txt, or you can mail them to me, or mention them on github.
+I have made a BBJ thread about cadastre.
+You can leave any questions/suggestions/feedback there.
 </p>
+</p>
+Alternatively you can also email me (internal mail), tell me in irc or put a comment/issue on github.
 <br />
 <br />
 <p>

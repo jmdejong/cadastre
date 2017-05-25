@@ -8,23 +8,41 @@ import random
 import re
 import string
 import html
+import time
+import hashlib
+
 
 # set this to "home" in testing environment, and to "/home" when running for real
 # todo: find a way to do this automatic
-usersdir = "/home"
+usersdir = "home"
 publicdir = os.path.join(sys.path[0],"public")
 
 parcelfileprefix = ".cadastre"
 
 backgroundchars = ",,..''``\"" + ' '*100
 
+maxwidth = 600
+maxheight = 300
+
+
 # These include: printable ascii characters, unicode range 0xa0 to 0x100 (minus \xad), unicode range 0x2200 to 0x22f0, unicode range 2500 to 2800
-regex = '[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\\\\\]^_`{|}~ ¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯▰▱▲△▴▵▶▷▸▹►▻▼▽▾▿◀◁◂◃◄◅◆◇◈◉◊○◌◍◎●◐◑◒◓◔◕◖◗◘◙◚◛◜◝◞◟◠◡◢◣◤◥◦◧◨◩◪◫◬◭◮◯◰◱◲◳◴◵◶◷◸◹◺◻◼◽◾◿☀☁☂☃☄★☆☇☈☉☊☋☌☍☎☏☐☑☒☓☔☕☖☗☘☙☚☛☜☝☞☟☠☡☢☣☤☥☦☧☨☩☪☫☬☭☮☯☰☱☲☳☴☵☶☷☸☹☺☻☼☽☾☿♀♁♂♃♄♅♆♇♈♉♊♋♌♍♎♏♐♑♒♓♔♕♖♗♘♙♚♛♜♝♞♟♠♡♢♣♤♥♦♧♨♩♪♫♬♭♮♯♰♱♲♳♴♵♶♷♸♹♺♻♼♽♾♿⚀⚁⚂⚃⚄⚅⚆⚇⚈⚉⚊⚋⚌⚍⚎⚏⚐⚑⚒⚓⚔⚕⚖⚗⚘⚙⚚⚛⚜⚝⚞⚟⚠⚡⚢⚣⚤⚥⚦⚧⚨⚩⚪⚫⚬⚭⚮⚯⚰⚱⚲⚳⚴⚵⚶⚷⚸⚹⚺⚻⚼⚽⚾⚿⛀⛁⛂⛃⛄⛅⛆⛇⛈⛉⛊⛋⛌⛍⛎⛏⛐⛑⛒⛓⛔⛕⛖⛗⛘⛙⛚⛛⛜⛝⛞⛟⛠⛡⛢⛣⛤⛥⛦⛧⛨⛩⛪⛫⛬⛭⛮⛯⛰⛱⛲⛳⛴⛵⛶⛷⛸⛹⛺⛻⛼⛽⛾⛿✀✁✂✃✄✅✆✇✈✉✊✋✌✍✎✏✐✑✒✓✔✕✖✗✘✙✚✛✜✝✞✟✠✡✢✣✤✥✦✧✨✩✪✫✬✭✮✯✰✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿❀❁❂❃❄❅❆❇❈❉❊❋❌❍❎❏❐❑❒❓❔❕❖❗❘❙❚❛❜❝❞❟❠❡❢❣❤❥❦❧❨❩❪❫❬❭❮❯❰❱❲❳❴❵❶❷❸❹❺❻❼❽❾❿➀➁➂➃➄➅➆➇➈➉➊➋➌➍➎➏➐➑➒➓➔➕➖➗➘➙➚➛➜➝➞➟➠➡➢➣➤➥➦➧➨➩➪➫➬➭➮➯➰➱➲➳➴➵➶➷➸➹➺➻➼➽➾➿⟀⟁⟂⟃⟄⟅⟆⟇⟈⟉⟊⟋⟌⟍⟎⟏⟐⟑⟒⟓⟔⟕⟖⟗⟘⟙⟚⟛⟜⟝⟞⟟⟠⟡⟢⟣⟤⟥⟦⟧⟨⟩⟪⟫⟬⟭⟮⟯⟰⟱⟲⟳⟴⟵⟶⟷⟸⟹⟺⟻⟼⟽⟾⟿∀∁∂∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∞∟∠∡∢∣∤∥∦∧∨∩∪∫∬∭∮∯∰∱∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋⊌⊍⊎⊏⊐⊑⊒⊓⊔⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⊢⊣⊤⊥⊦⊧⊨⊩⊪⊫⊬⊭⊮⊯⊰⊱⊲⊳⊴⊵⊶⊷⊸⊹⊺⊻⊼⊽⊾⊿⋀⋁⋂⋃⋄⋅⋆⋇⋈⋉⋊⋋⋌⋍⋎⋏⋐⋑⋒⋓⋔⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋮⋯]'
+regex = '[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\\\\\]^_`{|}~ ¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯▰▱▲△▴▵▶▷▸▹►▻▼▽▾▿◀◁◂◃◄◅◆◇◈◉◊○◌◍◎●◐◑◒◓◔◕◖◗◘◙◚◛◜◝◞◟◠◡◢◣◤◥◦◧◨◩◪◫◬◭◮◯◰◱◲◳◴◵◶◷◸◹◺◻◼◽◾◿☀☁☂☃☄★☆☇☈☉☊☋☌☍☎☏☐☑☒☓☔☕☖☗☘☙☚☛☜☝☞☟☠☡☢☣☤☥☦☧☨☩☪☫☬☭☮☯☰☱☲☳☴☵☶☷☸☹☺☻☼☽☾☿♀♁♂♃♄♅♆♇♈♉♊♋♌♍♎♏♐♑♒♓♔♕♖♗♘♙♚♛♜♝♞♟♠♡♢♣♤♥♦♧♨♩♪♫♬♭♮♯♰♱♲♳♴♵♶♷♸♹♺♻♼♽♾♿⚀⚁⚂⚃⚄⚅⚆⚇⚈⚉⚊⚋⚌⚍⚎⚏⚐⚑⚒⚓⚔⚕⚖⚗⚘⚙⚚⚛⚜⚝⚞⚟⚠⚡⚢⚣⚤⚥⚦⚧⚨⚩⚪⚫⚬⚭⚮⚯⚰⚱⚲⚳⚴⚵⚶⚷⚸⚹⚺⚻⚼⚽⚾⚿⛀⛁⛂⛃⛄⛅⛆⛇⛈⛉⛊⛋⛌⛍⛎⛏⛐⛑⛒⛓⛔⛕⛖⛗⛘⛙⛚⛛⛜⛝⛞⛟⛠⛡⛢⛣⛤⛥⛦⛧⛨⛩⛪⛫⛬⛭⛮⛯⛰⛱⛲⛳⛴⛵⛶⛷⛸⛹⛺⛻⛼⛽⛾⛿✀✁✂✃✄✅✆✇✈✉✊✋✌✍✎✏✐✑✒✓✔✕✖✗✘✙✚✛✜✝✞✟✠✡✢✣✤✥✦✧✨✩✪✫✬✭✮✯✰✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿❀❁❂❃❄❅❆❇❈❉❊❋❌❍❎❏❐❑❒❓❔❕❖❗❘❙❚❛❜❝❞❟❠❡❢❣❤❥❦❧❨❩❪❫❬❭❮❯❰❱❲❳❴❵❶❷❸❹❺❻❼❽❾❿➀➁➂➃➄➅➆➇➈➉➊➋➌➍➎➏➐➑➒➓➔➕➖➗➘➙➚➛➜➝➞➟➠➡➢➣➤➥➦➧➨➩➪➫➬➭➮➯➰➱➲➳➴➵➶➷➸➹➺➻➼➽➾➿⟀⟁⟂⟃⟄⟅⟆⟇⟈⟉⟊⟋⟌⟍⟎⟏⟐⟑⟒⟓⟔⟕⟖⟗⟘⟙⟚⟛⟜⟝⟞⟟⟠⟡⟢⟣⟤⟥⟦⟧⟨⟩⟪⟫⟬⟭⟮⟯⟰⟱⟲⟳⟴⟵⟶⟷⟸⟹⟺⟻⟼⟽⟾⟿∀∁∂∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∞∟∠∡∢∣∤∥∦∧∨∩∪∫∬∭∮∯∰∱∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋⊌⊍⊎⊏⊐⊑⊒⊓⊔⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⊢⊣⊤⊥⊦⊧⊨⊩⊪⊫⊬⊭⊮⊯⊰⊱⊲⊳⊴⊵⊶⊷⊸⊹⊺⊻⊼⊽⊾⊿⋀⋁⋂⋃⋄⋅⋆⋇⋈⋉⋊⋋⋌⋍⋎⋏⋐⋑⋒⋓⋔⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋮⋯π]'
 
 # this regex is necessary to filter out tabs, newlines and control characters
 # if a character would have a different size, it would fuck up all other parcels on that line
 replacechars = re.compile(regex)
 
+
+# return a 32-bit random integer based on the arguments
+def intHash(*args):
+    return int(hashlib.md5(' '.join(map(str,args)).encode('utf-8')).hexdigest()[:8],16)
+
+def floatHash(*args):
+    return intHash(*args)/(1<<32)
+
+def backgroundAt(x, y, seed):
+    i = int(floatHash(x, y, seed)*len(backgroundchars))
+    return backgroundchars[i]
 
 def hashPlace(x, y):
     return str(x) + "," + str(y)
@@ -54,6 +72,7 @@ class Cadastre:
         self.width = 0
         self.height = 0
         self.parcelfile = parcelfile
+        self.seed = time.time()
         if os.path.exists(self.towndatafile):
             with open(self.towndatafile) as f:
                 towndata = json.load(f)
@@ -65,18 +84,23 @@ class Cadastre:
     
     def update(self):
         
-        self.loadParcel("*****",os.path.join(sys.path[0], "adminparcel.prcl"))
+        self.loadParcelText("@_admin",os.path.join(sys.path[0], "adminparcel"))
         for user in os.listdir(usersdir):
             parcel = os.path.join(usersdir, user, parcelfileprefix, self.parcelfile)
-            if os.path.isfile(parcel):
-                self.loadParcel(user, parcel)
+            self.loadParcelText(user, parcel)
         for filename in os.listdir(publicdir):
             if filename[-5:] == ".prcl":
-                self.loadParcel(None, os.path.join(publicdir, filename))
+                self.loadParcelText(None, os.path.join(publicdir, filename))
             
     
-    def loadParcel(self, user, parcel):
+    def loadParcelText(self, user, parcelName):
         # todo: JSON and YAML support
+        if os.path.isfile(parcelName + ".txt"):
+            parcel = parcelName + ".txt"
+        elif os.path.isfile(parcelName + ".prcl"):
+            parcel = parcelName + ".prcl"
+        else:
+            return False
         try:
             with open(parcel) as f:
                 # load the desired coordinates
@@ -84,42 +108,48 @@ class Cadastre:
                 place = hashPlace(x, y)
                 
                 # check if the place is free
-                if place not in self.places or self.places[place]["owner"] == None or self.places[place]["owner"] == user:
+                if place in self.places and self.places[place]["owner"] != None and self.places[place]["owner"] != user:
+                    print("{} tried taking place {} which is taken.".format(user, place))
                     
-                    # load the ascii art
-                    lines = readAsciiImage(f, self.parcelwidth, self.parcelheight)
-                    
-                    # if the next line is a minus sign, use the ascii art as linkmap, otherwise read the linkmap
-                    mode = f.readline()
-                    if mode.strip() == '-':
-                        linkmap = lines
-                    else:
-                        linkmap = readAsciiImage(f, self.parcelwidth, self.parcelheight)
-                    
-                    # read the mapping of what character corresponds to what link
-                    links = {}
-                    for line in f:
-                        s = line.split(' ')
-                        if len(s) == 2:
-                            char, url = s
-                            links[char] = url
-                    
-                    self.places[place] = {
-                        "owner": user,
-                        "art": lines,
-                        #"url": url,
-                        "linkmap": linkmap,
-                        "links": links
-                    }
-                    # when moving, free the old place
-                    # art stays, but anyone is free to overwrite it
-                    if user in self.owners and place != self.owners[user]:
-                        self.places[self.owners[user]]["owner"] = None
-                    self.owners[user] = place
+                # load the ascii art
+                lines = readAsciiImage(f, self.parcelwidth, self.parcelheight)
+                
+                # if the next line is a minus sign, use the ascii art as linkmask, otherwise read the linkmask
+                mode = f.readline()
+                if mode.strip() == '-':
+                    linkmask = lines
+                else:
+                    linkmask = readAsciiImage(f, self.parcelwidth, self.parcelheight)
+                
+                # read the mapping of what character corresponds to what link
+                links = {}
+                for line in f:
+                    s = line.split(' ')
+                    if len(s) == 2:
+                        char, url = s
+                        links[char] = url
+                
+                self.places[place] = {
+                    "owner": user,
+                    "art": lines,
+                    #"url": url,
+                    "linkmap": linkmask,
+                    "linkmask": linkmask,
+                    "links": links
+                }
+                # when moving, free the old place
+                if user in self.owners and place != self.owners[user]:
+                    del self.places[self.owners[user]]
+                self.owners[user] = place
+                
+                return True
         
         except Exception as err:
             # todo: find a good but non-intrusive way to inform the user that their file is wrong
             print("error occured while loading user "+user+":\n", err)
+    
+    #def loadParcelJSON(self, user, parcel):
+        
     
     def updateSize(self):
         # find the maximum locations, so a viewer knows how big it should be
@@ -139,8 +169,8 @@ class Cadastre:
         return \
             "\n".join(
                 "".join(
-                    self.getCharAtPos(x, y) for x in range(self.width*self.parcelwidth)
-                ) for y in range(self.height*self.parcelheight)
+                    self.getCharAtPos(x, y) for x in range(min(maxwidth, self.width*self.parcelwidth))
+                ) for y in range(min(maxheight, self.height*self.parcelheight))
             )
     
     
@@ -167,8 +197,8 @@ a {text-decoration: none}
         return htmlwrapper % \
             "\n".join(
                 "".join(
-                    self.getHtmlAtPos(x, y) for x in range(self.width*self.parcelwidth)
-                ) for y in range(self.height*self.parcelheight)
+                    self.getHtmlAtPos(x, y) for x in range(min(maxwidth, self.width*self.parcelwidth))
+                ) for y in range(min(maxheight, self.height*self.parcelheight))
             )
     
     
@@ -189,20 +219,26 @@ a {text-decoration: none}
                 linkchar = parcel['linkmap'][y%self.parcelheight][x%self.parcelwidth]
                 if linkchar in parcel["links"]:
                     url = html.escape(parcel["links"][linkchar], True)
-                    return '<a href="%s">%s</a>' % (url, char)
+                    r = '<a href="%s">%s</a>' % (url, char)
                 else:
-                    return char
+                    r = char
             else:
-                return char
+                r = char
+            if (x%self.parcelwidth) == 0 and (y%self.parcelheight) == 0:
+                r = '<span id="{}">'.format(parcel['owner']) + r
+            if ((x+1)%self.parcelwidth) == 0 and (y%self.parcelheight) == 0:
+                r += '</span>'
         else:
-            return random.choice(backgroundchars)
+            r = backgroundAt(x, y, self.seed)
+        return r
     
     
     def save(self):
         with open(self.towndatafile, mode='w') as f:
             json.dump({
                 "places":self.places,
-                "owners":self.owners
+                "owners":self.owners,
+                "seed": self.seed
                 }, f)
     
     def export(self):
@@ -214,8 +250,9 @@ a {text-decoration: none}
 
 
 def main():
-    cadastre = Cadastre("town", "home.txt", 24, 12)
+    cadastre = Cadastre("town", "home", 24, 12)
     cadastre.update()
+    #print(c)
     cadastre.save()
     cadastre.export()
 
