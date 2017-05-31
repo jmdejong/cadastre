@@ -230,6 +230,8 @@ a {text-decoration: none}
                 r += '</span>'
         else:
             r = backgroundAt(x, y, self.seed)
+        if (x%self.parcelwidth) == 0 and (y%self.parcelheight) == 0:
+            r = '<span id="{}"></span>'.format(place) + r
         return r
     
     
@@ -243,10 +245,12 @@ a {text-decoration: none}
     
     def export(self):
         self.updateSize()
+        townString = self.toString()
         with open(os.path.join(sys.path[0], self.name+".txt"), mode='w') as f:
-            f.write(self.toString())
+            f.write(townString)
+        townHtml = self.toHtml()
         with open(os.path.join(sys.path[0], self.name+".html"), mode='w') as f:
-            f.write(self.toHtml())
+            f.write(townHtml)
 
 
 def main():
