@@ -14,6 +14,7 @@ import hashlib
 
 # set this to "home" in testing environment, and to "/home" when running for real
 # todo: find a way to do this automatic
+# solution: just make "home" a symlink to "/home" in the real thing
 usersdir = "home"
 publicdir = os.path.join(sys.path[0],"public")
 
