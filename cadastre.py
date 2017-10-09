@@ -64,7 +64,7 @@ def readAsciiImage(f, width, height):
 
 
 class Cadastre:
-    
+
     def __init__(self, name, parcelfile, width, height):
         self.name = name
         self.towndatafile = os.path.join(sys.path[0], name+".json")
@@ -82,9 +82,9 @@ class Cadastre:
         else:
             self.places = {}
             self.owners = {}
-    
+
     def update(self):
-        
+
         self.loadParcelText("@_admin",os.path.join(sys.path[0], "adminparcel"))
         for user in os.listdir(usersdir):
             parcel = os.path.join(usersdir, user, parcelfileprefix, self.parcelfile)
@@ -92,8 +92,8 @@ class Cadastre:
         for filename in os.listdir(publicdir):
             if filename[-5:] == ".prcl":
                 self.loadParcelText(None, os.path.join(publicdir, filename))
-            
-    
+
+
     def loadParcelText(self, user, parcelName):
         # todo: JSON and YAML support
         if os.path.isfile(parcelName + ".txt"):
@@ -107,21 +107,21 @@ class Cadastre:
                 # load the desired coordinates
                 x, y = [int(x) for x in f.readline().strip().split(' ')]
                 place = hashPlace(x, y)
-                
+
                 # check if the place is free
                 if place in self.places and self.places[place]["owner"] != None and self.places[place]["owner"] != user:
                     print("{} tried taking place {} which is taken.".format(user, place))
-                    
+
                 # load the ascii art
                 lines = readAsciiImage(f, self.parcelwidth, self.parcelheight)
-                
+
                 # if the next line is a minus sign, use the ascii art as linkmask, otherwise read the linkmask
                 mode = f.readline()
                 if mode.strip() == '-':
                     linkmask = lines
                 else:
                     linkmask = readAsciiImage(f, self.parcelwidth, self.parcelheight)
-                
+
                 # read the mapping of what character corresponds to what link
                 links = {}
                 for line in f:
@@ -129,12 +129,12 @@ class Cadastre:
                     if len(s) == 2:
                         char, url = s
                         links[char] = url
-                
+
                 self.places[place] = {
                     "owner": user,
                     "art": lines,
                     #"url": url,
-                    "linkmap": linkmask,
+                    # "linkmap": linkmask,
                     "linkmask": linkmask,
                     "links": links
                 }
@@ -142,16 +142,16 @@ class Cadastre:
                 if user in self.owners and place != self.owners[user]:
                     del self.places[self.owners[user]]
                 self.owners[user] = place
-                
+
                 return True
-        
+
         except Exception as err:
             # todo: find a good but non-intrusive way to inform the user that their file is wrong
             print("error occured while loading user "+user+":\n", err)
-    
+
     #def loadParcelJSON(self, user, parcel):
-        
-    
+
+
     def updateSize(self):
         # find the maximum locations, so a viewer knows how big it should be
         width = 0
@@ -164,8 +164,8 @@ class Cadastre:
                 height = y + 1
         self.width = width
         self.height = height
-        
-    
+
+
     def toString(self):
         return \
             "\n".join(
@@ -173,8 +173,8 @@ class Cadastre:
                     self.getCharAtPos(x, y) for x in range(min(maxwidth, self.width*self.parcelwidth))
                 ) for y in range(min(maxheight, self.height*self.parcelheight))
             )
-    
-    
+
+
     def toHtml(self):
         # create an html file as repesentation of the map
         # a better way would be to make a viewer in html/js that asks for the json data using AJAX
@@ -201,8 +201,8 @@ a {text-decoration: none}
                     self.getHtmlAtPos(x, y) for x in range(min(maxwidth, self.width*self.parcelwidth))
                 ) for y in range(min(maxheight, self.height*self.parcelheight))
             )
-    
-    
+
+
     def getCharAtPos(self, x, y):
         place = hashPlace(x//self.parcelwidth, y//self.parcelheight)
         if place in self.places:
@@ -210,7 +210,7 @@ a {text-decoration: none}
             return parcel['art'][y%self.parcelheight][x%self.parcelwidth]
         else:
             return random.choice(backgroundchars)
-    
+
     def getHtmlAtPos(self, x, y):
         place = hashPlace(x//self.parcelwidth, y//self.parcelheight)
         if place in self.places:
@@ -234,8 +234,8 @@ a {text-decoration: none}
         if (x%self.parcelwidth) == 0 and (y%self.parcelheight) == 0:
             r = '<span id="{}"></span>'.format(place) + r
         return r
-    
-    
+
+
     def save(self):
         with open(self.towndatafile, mode='w') as f:
             json.dump({
@@ -243,7 +243,7 @@ a {text-decoration: none}
                 "owners":self.owners,
                 "seed": self.seed
                 }, f)
-    
+
     def export(self):
         self.updateSize()
         townString = self.toString()
@@ -263,4 +263,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
