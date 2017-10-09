@@ -80,3 +80,4 @@ main = do
     p <- loadParcels
     putStrLn $ makeJSONCadastre p
     putStrLn $ Cadastre.toText 100 100 p
+    putStrLn $ Cadastre.toHtml 100 100 p

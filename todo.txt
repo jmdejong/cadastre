@@ -1,0 +1,10 @@
+
+
+TODO:
+
+hadastre:
+
+put html header and footer in export
+set correct id's in html export
+test merging!
+make new json format

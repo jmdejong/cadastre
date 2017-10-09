@@ -9,7 +9,7 @@ module Parcel (
     hasOwner,
     toTextLines,
     charAtPos,
-    charAtGlobalPos,
+    linkAtPos,
     parcelWidth,
     parcelHeight
 ) where
@@ -111,11 +111,10 @@ hasOwner parcel = case owner parcel of
 charAtPos :: Parcel -> Pos -> Char
 charAtPos parcel (x, y) = ((plot parcel) !! y) !! x
 
+linkAtPos :: Parcel -> Pos -> Maybe String
+linkAtPos parcel (x, y) = Map.lookup linkChar (links parcel)
+    where linkChar = ((linkMask parcel) !! y) !! x
 
-charAtGlobalPos :: Parcel -> Pos -> Char
-charAtGlobalPos parcel (x, y) = charAtPos parcel (x - plotX*parcelWidth, y - plotY*parcelHeight)
-    where
-        (plotX, plotY) = location parcel
 
 
 

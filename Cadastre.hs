@@ -4,7 +4,8 @@ module Cadastre (
     fromTexts,
     toJSON,
     fromJSON,
-    toText
+    toText,
+    toHtml
 ) where
 --
 import qualified Parcel
@@ -12,10 +13,6 @@ import qualified Text.JSON as JSON
 import Data.List
 import Utils
 import qualified Data.Map as Map
-import Crypto.Hash
-import Data.ByteString.Char8 (pack)
-import qualified Data.ByteArray as BA
-import qualified Data.Binary as Bin
 
 data Cadastre = Cadastre 
     { parcels :: Map.Map Pos Parcel.Parcel
@@ -73,12 +70,29 @@ merge (Cadastre oldP _) (Cadastre newP seed) = Cadastre mergedP seed
 
 
 toText :: Int -> Int -> Cadastre -> String
-toText width height cadastre = unlines $ map (\y -> map (\x -> charAtPos cadastre x y) [0..(width-1)]) [0..(height-1)]
+toText width height cadastre = unlines $ map (\y -> map (\x -> charAtPos cadastre (x, y)) [0..(width-1)]) [0..(height-1)]
 
-charAtPos :: Cadastre -> Int -> Int -> Char
-charAtPos cadastre x y = case Map.lookup (div x Parcel.parcelWidth, div y Parcel.parcelHeight) (parcels cadastre)  of
-    Just parcel -> Parcel.charAtGlobalPos parcel (x, y)
-    Nothing -> randomChar x y (seed cadastre)
+charAtPos :: Cadastre -> Pos -> Char
+charAtPos cadastre pos = fst $ charLinkAtPos cadastre pos
+
+charLinkAtPos  :: Cadastre -> Pos -> (Char, Maybe String)
+charLinkAtPos cadastre (x, y) = case Map.lookup (div x Parcel.parcelWidth, div y Parcel.parcelHeight) (parcels cadastre)  of
+    Just parcel -> (Parcel.charAtPos parcel localPos, Parcel.linkAtPos parcel localPos)
+        where localPos = (mod x Parcel.parcelWidth, mod y Parcel.parcelHeight)
+    Nothing -> (randomChar x y (seed cadastre), Nothing)
+
+
+-- outputRegion :: (Cadastre -> Int -> Int -> a) -> Int -> Int -> Cadastre -> a
+-- outputRegion posFun width height cadastre = unlines $ map (\y -> map (\x -> posFun cadastre x y) [0..(width-1)]) [0..(height-1)]
+
+toHtml :: Int -> Int -> Cadastre -> String
+toHtml width height cadastre = unlines $ map (\y -> concatMap (\x -> htmlAtPos cadastre (x, y)) [0..(width-1)]) [0..(height-1)]
+
+htmlAtPos :: Cadastre -> Pos -> String
+htmlAtPos cadastre (x, y) = toHtml $ charLinkAtPos cadastre (x, y)
+    where 
+        toHtml (c, Just link) = "<a href=\"" ++ htmlEscape link ++ "\">" ++ htmlEscape [c] ++ "</a>"
+        toHtml (c, Nothing) = htmlEscape [c]
 
 
 backgroundChars :: [Char]
@@ -88,11 +102,6 @@ randomChar :: Int -> Int -> Integer -> Char
 randomChar x y s = backgroundChars !! random
     where random = fromIntegral . randomize . intersperse ' ' . concatMap show $ [x, y, fromIntegral s]
 
-
-randomize :: String -> Bin.Word8
-randomize = (`BA.index` 0) .  md5 . pack . intersperse ' ' . concatMap show
-    where 
-        md5 x = hash x :: Digest MD5
 
 
 
