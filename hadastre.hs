@@ -10,6 +10,7 @@ import qualified Text.JSON as JSON
 import System.FilePath.Posix
 import qualified Parcel
 import qualified Cadastre
+import Utils
 
 
 type Pos = (Int, Int)
@@ -78,4 +79,4 @@ main :: IO ()
 main = do
     p <- loadParcels
     putStrLn $ makeJSONCadastre p
-    
+    putStrLn $ Cadastre.toText 100 100 p
