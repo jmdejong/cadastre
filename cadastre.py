@@ -170,8 +170,8 @@ class Cadastre:
         return \
             "\n".join(
                 "".join(
-                    self.getCharAtPos(x, y) for x in range(min(maxwidth, self.width*self.parcelwidth))
-                ) for y in range(min(maxheight, self.height*self.parcelheight))
+                    self.getCharAtPos(x, y) for x in range((maxwidth))#, self.width*self.parcelwidth))
+                ) for y in range(min(maxheight, maxheight))#self.height*self.parcelheight))
             )
 
 
@@ -198,8 +198,8 @@ a {text-decoration: none}
         return htmlwrapper % \
             "\n".join(
                 "".join(
-                    self.getHtmlAtPos(x, y) for x in range(min(maxwidth, self.width*self.parcelwidth))
-                ) for y in range(min(maxheight, self.height*self.parcelheight))
+                    self.getHtmlAtPos(x, y) for x in range((maxwidth))#, self.width*self.parcelwidth))
+                ) for y in range(min(maxheight, maxheight))#self.height*self.parcelheight))
             )
 
 
@@ -237,12 +237,14 @@ a {text-decoration: none}
 
 
     def save(self):
-        with open(self.towndatafile, mode='w') as f:
+        tmpfile = self.towndatafile+".tmpcadastre"
+        with open(tmpfile, mode='w') as f:
             json.dump({
                 "places":self.places,
                 "owners":self.owners,
                 "seed": self.seed
                 }, f)
+        os.rename(tmpfile, self.towndatafile)
 
     def export(self):
         self.updateSize()
