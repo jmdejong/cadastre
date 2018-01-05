@@ -1,59 +1,43 @@
+
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
+
 module Cadastre (
     Cadastre,
     empty,
     fromTexts,
-    toJSON,
-    fromJSON,
     toText,
     toHtml
 ) where
---
+
+import GHC.Generics
+import qualified Data.Text as T
 import qualified Parcel
-import qualified Text.JSON as JSON
 import Data.List
 import Utils
 import qualified Data.Map as Map
+import qualified Data.Aeson as Aeson
 
 data Cadastre = Cadastre 
     { parcels :: Map.Map Pos Parcel.Parcel
     , seed :: Integer}
-    deriving Show
+    deriving (Generic, Show)
+
+instance Aeson.ToJSON Cadastre where
+    toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+
+instance Aeson.FromJSON Cadastre
 
 
 empty :: Cadastre
 empty = Cadastre Map.empty 0
 
-fromTexts :: Integer -> [(Maybe String, String)] -> Cadastre
+fromTexts :: Integer -> [(Maybe T.Text, T.Text)] -> Cadastre
 fromTexts seed texts = Cadastre (Map.fromList $ map parseText texts) seed
     where
         parseText (owner, text) = (Parcel.location parcel, parcel)
             where 
                 parcel = Parcel.fromText owner text
-
-toJSON :: Cadastre -> JSON.JSValue
-toJSON (Cadastre parcelMap seed) = jnfo $ [
-    ("places", parcelsToJSONObject parcels),
-    ("seed", jnfn $ seed),
-    ("owners", jnfo . map makeOwnerTuple . filter Parcel.hasOwner $ parcels)]
-    where
-        makeOwnerTuple (Parcel.Parcel (Just owner) pos _ _ _) = (owner, jnfs . hashPos $ pos)
-        parcelsToJSONObject = jnfo . map prepareParcel
-        prepareParcel parcel = (hashPos (Parcel.location parcel), Parcel.toJSON parcel)
-        jnfs = JSON.JSString . JSON.toJSString
-        jnfn = JSON.JSRational False . toRational
-        jnfo = JSON.JSObject . JSON.toJSObject
-        jnfa = JSON.JSArray
-        parcels = Map.elems parcelMap
-
-fromJSON :: JSON.JSValue -> Cadastre
-fromJSON (JSON.JSObject jso) = Cadastre parcelmap (floor seedVal)
-    where 
-        JSON.JSRational false seedVal = assume . lookup "seed" $ o
-        parcelmap = Map.fromList $ map (\p -> (Parcel.location p, p)) parcels
-        parcels = map Parcel.fromJSON $ jsParcels
-        jsParcels = map snd . JSON.fromJSObject $ parcelJso
-        Just (JSON.JSObject parcelJso) = lookup "places" o
-        o = JSON.fromJSObject jso
 
 
 merge :: Cadastre -> Cadastre -> Cadastre
@@ -69,30 +53,49 @@ merge (Cadastre oldP _) (Cadastre newP seed) = Cadastre mergedP seed
             Nothing -> True
 
 
-toText :: Int -> Int -> Cadastre -> String
-toText width height cadastre = unlines $ map (\y -> map (\x -> charAtPos cadastre (x, y)) [0..(width-1)]) [0..(height-1)]
+toText :: Int -> Int -> Cadastre -> T.Text
+toText width height = T.unlines . map T.pack . outputRegion charAtPos width height
 
 charAtPos :: Cadastre -> Pos -> Char
 charAtPos cadastre pos = fst $ charLinkAtPos cadastre pos
 
-charLinkAtPos  :: Cadastre -> Pos -> (Char, Maybe String)
+charLinkAtPos  :: Cadastre -> Pos -> (Char, Maybe T.Text)
 charLinkAtPos cadastre (x, y) = case Map.lookup (div x Parcel.parcelWidth, div y Parcel.parcelHeight) (parcels cadastre)  of
     Just parcel -> (Parcel.charAtPos parcel localPos, Parcel.linkAtPos parcel localPos)
         where localPos = (mod x Parcel.parcelWidth, mod y Parcel.parcelHeight)
     Nothing -> (randomChar x y (seed cadastre), Nothing)
 
 
--- outputRegion :: (Cadastre -> Int -> Int -> a) -> Int -> Int -> Cadastre -> a
--- outputRegion posFun width height cadastre = unlines $ map (\y -> map (\x -> posFun cadastre x y) [0..(width-1)]) [0..(height-1)]
+outputRegion :: (Cadastre -> Pos -> a) -> Int -> Int -> Cadastre -> [[a]]
+outputRegion posFun width height cadastre = 
+    take (height * Parcel.parcelHeight) (
+        map 
+            (\y -> take (width * Parcel.parcelWidth) (
+                map 
+                    (\x -> posFun cadastre (x, y)) 
+                    [0..]))
+            [0..])
+--
 
-toHtml :: Int -> Int -> Cadastre -> String
-toHtml width height cadastre = unlines $ map (\y -> concatMap (\x -> htmlAtPos cadastre (x, y)) [0..(width-1)]) [0..(height-1)]
+htmlBegin = "<!DOCTYPE html>\n<html>\n<!-- See tilde.town/~troido/cadastre for instructions -->\n<head>\n    <meta charset='utf-8'>\n   \n<style>\na {text-decoration: none}\n    </style>\n</head>\n<body>\n    <pre>" :: T.Text
+htmlEnd = "</body>\n<!-- Cadastre made by ~Troido; art by tilde.town users -->\n</html>\n" :: T.Text
 
-htmlAtPos :: Cadastre -> Pos -> String
-htmlAtPos cadastre (x, y) = toHtml $ charLinkAtPos cadastre (x, y)
-    where 
-        toHtml (c, Just link) = "<a href=\"" ++ htmlEscape link ++ "\">" ++ htmlEscape [c] ++ "</a>"
-        toHtml (c, Nothing) = htmlEscape [c]
+newline = "\n" :: T.Text
+
+toHtml :: Int -> Int -> Cadastre -> T.Text -- BU.ByteString
+toHtml width height = makePage . T.intercalate newline . map T.concat . outputRegion htmlAtPos width height
+    where makePage s = T.concat [htmlBegin, s, htmlEnd]
+
+htmlAtPos :: Cadastre -> Pos -> T.Text -- BU.ByteString --String
+htmlAtPos cadastre (x, y) = if localPos == (0,0) then T.append idSpan posString else posString
+    where
+        posString = case p of 
+            Just parcel -> Parcel.htmlAtPos parcel localPos
+            Nothing -> htmlEscape $ T.singleton $ randomChar x y (seed cadastre)
+        localPos = (mod x Parcel.parcelWidth, mod y Parcel.parcelHeight)
+        parcelPos@(parcelX, parcelY) = (div x Parcel.parcelWidth, div y Parcel.parcelHeight)
+        p = Map.lookup parcelPos (parcels cadastre)
+        idSpan = "<span id=\"" `T.append` T.pack (show parcelX) `T.append` "," `T.append` T.pack (show parcelY) `T.append` "\"></span>"
 
 
 backgroundChars :: [Char]

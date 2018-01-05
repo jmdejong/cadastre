@@ -1,4 +1,5 @@
 
+{-# LANGUAGE OverloadedStrings #-}
 
 import Control.Exception
 import Data.List
@@ -7,9 +8,13 @@ import System.IO
 import System.Directory
 import qualified Data.Map.Strict as Map
 import qualified Text.JSON as JSON
+import qualified Data.Aeson as Aeson
 import System.FilePath.Posix
 import qualified Parcel
 import qualified Cadastre
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import qualified Data.ByteString.Lazy as BS
 import Utils
 
 
@@ -19,24 +24,24 @@ parcelPath :: String -> FilePath
 parcelPath user = "./home/" ++ user ++ "/.cadastre/home.txt"
 
 
-readUtf8File :: FilePath -> IO String
+readUtf8File :: FilePath -> IO T.Text
 readUtf8File path = do
     inputHandle <- openFile path ReadMode
     hSetEncoding inputHandle utf8
-    hGetContents inputHandle
+    TIO.hGetContents inputHandle
 
-appendFileIfReadable :: FilePath -> IO [(FilePath, String)] -> IO [(FilePath, String)]
+appendFileIfReadable :: FilePath -> IO [(FilePath, T.Text)] -> IO [(FilePath, T.Text)]
 appendFileIfReadable path iofiles =
     do
         files <- iofiles
-        maybeFile <- try (readUtf8File path) :: IO (Either SomeException String)
+        maybeFile <- try (readUtf8File path) :: IO (Either SomeException T.Text)
         case maybeFile of
                 Left _ex -> return files
                 Right text -> do
                     return ((path, text):files)
 
 
-readFiles :: [FilePath] -> IO [(FilePath, String)]
+readFiles :: [FilePath] -> IO [(FilePath, T.Text)]
 readFiles = foldr appendFileIfReadable (return [])
 
 
@@ -46,31 +51,31 @@ loadParcels = do
     let userPaths = map parcelPath userNames
     publicFiles <- listDirectory "public"
     let publicPaths = map ("./public/" ++) publicFiles
-    let paths = userPaths ++ publicPaths ++ ["./adminparcel.prcl"]
+    let paths = userPaths ++ publicPaths ++ ["./adminparcel.prcl"] :: [FilePath]
     parcelTexts <- readFiles paths
     return 
         $ Cadastre.fromTexts 0
             . map (\(path, text) -> (getOwnerFromPath path, text)) 
             $ parcelTexts
 
-getOwnerFromPath :: FilePath -> Maybe String
-getOwnerFromPath path = case dropWhile (==".") (splitDirectories path) of
-    "home":owner:_xs -> Just owner
+getOwnerFromPath :: FilePath -> Maybe T.Text
+getOwnerFromPath path = case dropWhile (== ".") (splitDirectories path) of
+    "home":owner:_xs -> Just $ T.pack owner
     "public":_xs -> Nothing
     "adminparcel.prcl":[] -> Just "@_admin"
 
-makeJSONCadastre :: Cadastre.Cadastre -> String
-makeJSONCadastre = JSON.encode . Cadastre.toJSON
+makeJSONCadastre :: Cadastre.Cadastre -> BS.ByteString
+makeJSONCadastre = Aeson.encode
 
 
-decodeJSONCadastre ::  String -> Cadastre.Cadastre
-decodeJSONCadastre jsonText = Cadastre.fromJSON json
+decodeJSONCadastre :: BS.ByteString -> Cadastre.Cadastre
+decodeJSONCadastre jsonText = json
     where 
-        JSON.Ok json = JSON.decode jsonText
+        Just json = Aeson.decode jsonText
 
-readPreviousCadastre :: String -> IO Cadastre.Cadastre
+readPreviousCadastre :: FilePath -> IO Cadastre.Cadastre
 readPreviousCadastre path = do
-    jsonText <- readUtf8File path
+    jsonText <- BS.readFile path
     let parcels = decodeJSONCadastre jsonText
     return parcels
 
@@ -78,6 +83,16 @@ readPreviousCadastre path = do
 main :: IO ()
 main = do
     p <- loadParcels
-    putStrLn $ makeJSONCadastre p
-    putStrLn $ Cadastre.toText 100 100 p
-    putStrLn $ Cadastre.toHtml 100 100 p
+--     putStrLn $ makeJSONCadastre p
+--     putStrLn $ Cadastre.toText 5 5 p
+    let json = makeJSONCadastre p
+        text = Cadastre.toText 25 25 p
+        html = Cadastre.toHtml 25 25 p
+    
+--     print $ length json
+--     print $ length text
+--     print $ BC.length html
+    
+    BS.writeFile "htown.json" json
+    TIO.writeFile "htown.txt" text
+    TIO.writeFile "htown.html" html
