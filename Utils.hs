@@ -5,9 +5,9 @@ module Utils where
 
 
 
-import Data.ByteString.Char8 (pack)
-import qualified Data.ByteArray as BA
-import qualified Data.Binary as Bin
+-- import Data.ByteString.Char8 (pack)
+-- import qualified Data.ByteArray as BA
+-- import qualified Data.Binary as Bin
 import Crypto.Hash
 import System.IO.Unsafe
 import qualified Data.Text as T
@@ -19,10 +19,10 @@ type Pos = (Int, Int)
 assume :: Maybe a -> a
 assume (Just x) = x
 
-randomize :: String -> Bin.Word8
-randomize = (`BA.index` 0) .  md5 . pack . intersperse ' ' . concatMap show
-    where 
-        md5 x = hash x :: Digest MD5
+-- randomize :: (Show a, BA.ByteArrayAccess b) => a -> b --Bin.Word8
+-- randomize = md5 . pack . show
+--     where 
+--         md5 x = hash x :: Digest MD5
 
 
 htmlEscape :: T.Text -> T.Text
