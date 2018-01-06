@@ -71,7 +71,8 @@ makeJSONCadastre = Aeson.encode
 decodeJSONCadastre :: BS.ByteString -> Cadastre.Cadastre
 decodeJSONCadastre jsonText = json
     where 
-        Just json = Aeson.decode jsonText
+        Right json = decoded
+        decoded = (Aeson.eitherDecode jsonText :: Either String Cadastre.Cadastre)
 
 readPreviousCadastre :: FilePath -> IO Cadastre.Cadastre
 readPreviousCadastre path = do
@@ -85,9 +86,12 @@ main = do
     p <- loadParcels
 --     putStrLn $ makeJSONCadastre p
 --     putStrLn $ Cadastre.toText 5 5 p
-    let json = makeJSONCadastre p
-        text = Cadastre.toText 25 25 p
-        html = Cadastre.toHtml 25 25 p
+    r <- readPreviousCadastre "town.json"
+--     print r
+    let t = Cadastre.merge p r
+    let json = makeJSONCadastre t
+    let text = Cadastre.toText 25 25 t
+    let html = Cadastre.toHtml 25 25 t
     
 --     print $ length json
 --     print $ length text

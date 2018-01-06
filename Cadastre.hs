@@ -7,7 +7,8 @@ module Cadastre (
     empty,
     fromTexts,
     toText,
-    toHtml
+    toHtml,
+    merge
 ) where
 
 import GHC.Generics
@@ -19,9 +20,10 @@ import qualified Data.Map as Map
 import qualified Data.Aeson as Aeson
 import Data.Bits
 import qualified Data.Binary as Bin
-import Data.Array
+import qualified Data.Array as Arr
 import qualified Data.ByteString.Lazy.Char8 as C
 import qualified Data.ByteArray as BA
+import Data.Semigroup (Semigroup ((<>)))
 import Data.Scientific
 
 data Cadastre = Cadastre 
@@ -31,31 +33,40 @@ data Cadastre = Cadastre
 
 
 data Background = Background
-    { bgseed :: Integer
-    , grid :: Array Bin.Word16 Bin.Word16}
+    { bgseed :: Int
+    , grid :: Arr.Array Bin.Word16 Bin.Word16}
     deriving Show
 
 type FilledCadastre = (Cadastre, Background)
 
 instance Aeson.ToJSON Cadastre where
-    toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+    toJSON (Cadastre parcels background) =
+        Aeson.object ["places" Aeson..= (Map.mapKeys hashPos parcels), "seed" Aeson..= background]
 
-instance Aeson.FromJSON Cadastre
+    -- this encodes directly to a bytestring Builder
+    toEncoding (Cadastre parcels background) =
+        Aeson.pairs ("places" Aeson..= (Map.mapKeys hashPos parcels) <> "seed" Aeson..= background)
+    
+
+instance Aeson.FromJSON Cadastre where
+    parseJSON = Aeson.withObject "Cadastre" $ \v -> Cadastre
+        <$> (fmap (mapKeyValue (\pos parcel -> (unHashPos pos, Parcel.place parcel $ unHashPos pos))) (v Aeson..: "places"))
+        <*> (v Aeson..: "seed")
 
 instance Aeson.ToJSON Background where
     toJSON (Background seed _) = Aeson.toJSON seed
     toEncoding (Background seed _) = Aeson.toEncoding seed
 
 instance Aeson.FromJSON Background where
-    parseJSON = Aeson.withScientific "Background" $  return . makeBackground . fromIntegral . (assume . toBoundedInteger :: Scientific -> Int)
+    parseJSON = Aeson.withScientific "Background" $  return . makeBackground . def 0 . (toBoundedInteger :: Scientific -> Maybe Int)
 
 empty :: Cadastre
 empty = Cadastre Map.empty (makeBackground 0)
 
-seed :: Cadastre -> Integer
+seed :: Cadastre -> Int
 seed (Cadastre _ (Background s _)) = s
 
-fromTexts :: Integer -> [(Maybe T.Text, T.Text)] -> Cadastre
+fromTexts :: Int -> [(Maybe T.Text, T.Text)] -> Cadastre
 fromTexts seed texts = Cadastre (Map.fromList $ map parseText texts) (makeBackground seed)
     where
         parseText (owner, text) = (Parcel.location parcel, parcel)
@@ -121,7 +132,7 @@ htmlAtPos cadastre (x, y) = if localPos == (0,0) then T.append idSpan posString 
         idSpan = "<span id=\"" `T.append` T.pack (show parcelX) `T.append` "," `T.append` T.pack (show parcelY) `T.append` "\"></span>"
 
 getBackground :: Int -> Int -> Cadastre -> Char
-getBackground x y (Cadastre _ (Background _ grid)) = C.index backgroundChars $ (`mod` 256) $ fromIntegral $ (!) grid $ fromIntegral $ (mod x 256) + 256 * (mod y 256)
+getBackground x y (Cadastre _ (Background _ grid)) = C.index backgroundChars $ (`mod` 256) $ fromIntegral $ (Arr.!) grid $ fromIntegral $ (mod x 256) + 256 * (mod y 256)
         
 backgroundChars :: C.ByteString
 backgroundChars = C.pack $ take 256 $ "' ' ' ' , , , , . . . . ` ` ` ` \" \"" ++ repeat ' '
@@ -130,48 +141,29 @@ backgroundChars = C.pack $ take 256 $ "' ' ' ' , , , , . . . . ` ` ` ` \" \"" ++
 galoisStep :: (Integral i, Bits i )=> i -> i
 galoisStep i = if testBit i 0 then (shiftR i 1) `xor` 0xB400 else shiftR i 1
 
-galois :: Bin.Word16 -> Array Bin.Word16 Bin.Word16
-galois start = listArray (0, 0xFFFF) $ iterate galoisStep start
---     where
---         step i = case i .&. 1 of 
---                       1 -> (shiftR i 1) `xor` 0xB400
---                       _ -> shiftR i 1
-
--- background :: Array Bin.Word16 Bin.Word16
--- background = galois 1
--- background = background' 11
---     where
---         background' start = listArray (0, 65535) $ iterate step start
---         step i = case i .&. 1 of 
---                       1 -> (shiftR i 1) `xor` 0xB400
---                       _ -> shiftR i 1
---array (0, 2^16) $ map (\i -> (i, fizzle $ fromIntegral i)) [0..(2^16-1)]
---     where 
---         fizzle :: Bin.Word16 -> Bin.Word16
---         fizzle 0xACE1 = 0
---         fizzle i = debugPrint i $ 1 + background ! (fromIntegral (step i))
---         step :: Bin.Word16 -> Bin.Word16
---         step i = case i .&. 1 of 
---                       1 -> (shiftR i 1) `xor` 0xB400
---                       _ -> shiftR i 1
-
--- randomChar :: Int -> Int -> Integer -> Char
--- randomChar x y s = C.index backgroundChars $ fromIntegral (mod random 256)
---     where -- an improvised hashing function. I'm looking for any better function
---         x8 = fromIntegral x :: Bin.Word16
---         y8 = fromIntegral y :: Bin.Word16
---         s8 = fromIntegral s :: Bin.Word16
---         random = mod ((galois 1) ! ((x8 `mod` 256) + 256 * (y8 `mod` 256))) 256--(mod r 256) `xor` (div r 256) --(galois (11+(galois (s8 + 1) ! y8))) ! x8  
---         r = galoisStep (galoisStep x8) `xor` galoisStep y8-- (x8+11) * (step (y8+10)) `xor` s8
+galois :: Bin.Word16 -> Arr.Array Bin.Word16 Bin.Word16
+galois start = Arr.listArray (0, 0xFFFF) $ iterate galoisStep start
 
 
-makeBackground :: Integer -> Background
+makeBackground :: Int -> Background
 makeBackground 0 = makeBackground 1
 makeBackground seed = Background seed (galois $ fromIntegral seed)
 
 
-hashPos :: Pos -> String
-hashPos (x, y) = (show x) ++ "," ++ (show y)
+hashPos :: Pos -> T.Text
+hashPos (x, y) = T.pack $ (show x) ++ "," ++ (show y)
 
+unHashPos :: T.Text -> Pos
+unHashPos t = (read (T.unpack begin), read (T.unpack end))
+    where
+        (begin, rest) = T.breakOn "," t
+        end = T.tail rest
+
+mapKeyValue :: Ord k2 => (k1 -> a -> (k2, b)) -> Map.Map k1 a -> Map.Map k2 b
+mapKeyValue fn = Map.foldrWithKey update Map.empty
+    where
+        update key value m = Map.insert newKey newValue m
+            where
+                (newKey, newValue) = fn key value
 
 

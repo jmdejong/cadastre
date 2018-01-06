@@ -4,10 +4,6 @@
 module Utils where
 
 
-
--- import Data.ByteString.Char8 (pack)
--- import qualified Data.ByteArray as BA
--- import qualified Data.Binary as Bin
 import Crypto.Hash
 import System.IO.Unsafe
 import qualified Data.Text as T
@@ -19,11 +15,9 @@ type Pos = (Int, Int)
 assume :: Maybe a -> a
 assume (Just x) = x
 
--- randomize :: (Show a, BA.ByteArrayAccess b) => a -> b --Bin.Word8
--- randomize = md5 . pack . show
---     where 
---         md5 x = hash x :: Digest MD5
-
+def :: a -> Maybe a -> a
+def _ (Just x) = x
+def d Nothing = d
 
 htmlEscape :: T.Text -> T.Text
 htmlEscape "" = ""

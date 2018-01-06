@@ -14,7 +14,8 @@ module Parcel (
     linkAtPos,
     htmlAtPos,
     parcelWidth,
-    parcelHeight
+    parcelHeight,
+    place
 ) where
 --
 
@@ -33,10 +34,10 @@ parcelWidth = 24
 parcelHeight = 12
 
 data Parcel = Parcel 
-    { owner :: Maybe Text
-    , location :: Pos 
-    , plot :: [Text]
-    , linkMask :: [Text]
+    { owner :: Maybe T.Text
+    , location :: Pos -- todo: make this a Maybe ?
+    , art :: [T.Text]
+    , linkmask :: [T.Text]
     , links :: Map.Map Char Text
     } deriving (Generic, Show)
 --
@@ -45,7 +46,12 @@ instance Aeson.ToJSON Parcel where
     toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
 
 instance Aeson.FromJSON Parcel where 
-    --
+    parseJSON = Aeson.withObject "Parcel" $ \v -> Parcel
+        <$> (v Aeson..: "owner")
+        <*> (pure (0, 0))
+        <*> (v Aeson..: "art")
+        <*> (v Aeson..: "linkmask")
+        <*> (v Aeson..: "links")
 
 fromText :: Maybe T.Text -> T.Text -> Parcel
 fromText owner p = Parcel owner (x, y) plot linkMask links
@@ -77,7 +83,7 @@ empty = fromText Nothing "0 0"
 
 
 toTextLines :: Parcel -> [Text]
-toTextLines parcel = plot parcel
+toTextLines parcel = art parcel
 
 hasOwner :: Parcel -> Bool
 hasOwner parcel = case owner parcel of
@@ -85,11 +91,11 @@ hasOwner parcel = case owner parcel of
                        Nothing -> False
 
 charAtPos :: Parcel -> Pos -> Char
-charAtPos parcel (x, y) = ((plot parcel) !! y) `T.index` x
+charAtPos parcel (x, y) = ((art parcel) !! y) `T.index` x
 
 linkAtPos :: Parcel -> Pos -> Maybe Text
 linkAtPos parcel (x, y) = Map.lookup linkChar (links parcel)
-    where linkChar = ((linkMask parcel) !! y) `T.index` x
+    where linkChar = ((linkmask parcel) !! y) `T.index` x
 
 
 htmlAtPos :: Parcel -> Pos -> Text
@@ -105,5 +111,7 @@ htmlAtPos parcel pos@(x, y) = wrapId $ wrapLink $ htmlEscape $ T.pack [charAtPos
             Just url -> "<a href=\"" `T.append` htmlEscape url `T.append` "\">" `T.append` s `T.append` "</a>" :: Text
             Nothing -> s :: Text
 
+place :: Parcel -> Pos -> Parcel
+place (Parcel owner _ plot linkMask links) pos = Parcel owner pos plot linkMask links
 
 
