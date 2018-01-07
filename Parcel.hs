@@ -24,6 +24,7 @@ import GHC.Generics
 import qualified Data.Text as T
 import qualified Data.Aeson as Aeson
 import qualified Data.Map as Map
+import qualified Text.Read
 import Data.Char
 import Data.List
 import Utils
@@ -53,12 +54,15 @@ instance Aeson.FromJSON Parcel where
         <*> (v Aeson..: "linkmask")
         <*> (v Aeson..: "links")
 
-fromText :: Maybe T.Text -> T.Text -> Parcel
-fromText owner p = Parcel owner (x, y) plot linkMask links
-    where
-        (posl:l) = T.lines p
-        [x, y] = map (read . T.unpack) (T.words posl) :: [Int]
-        (plotLines, l') = splitAt parcelHeight l
+fromText :: Maybe T.Text -> T.Text -> Maybe Parcel
+fromText owner p = do
+    let (posl:l) = T.lines p
+        w = T.words posl
+    [sx, sy] <- if length w == 2 then Just w else Nothing
+    x <- Text.Read.readMaybe $ T.unpack sx
+    y <- Text.Read.readMaybe $ T.unpack sy
+--         [x, y] = map (Text.Read.readMaybe . T.unpack) (T.words posl) :: [Int]
+    let (plotLines, l') = splitAt parcelHeight l
         plot = (fillPlot parcelWidth parcelHeight plotLines) :: [T.Text]
         fillPlot :: Int -> Int -> [T.Text] -> [T.Text]
         fillPlot width height p = take height . map (fillLines width) $ p ++ repeat T.empty
@@ -77,9 +81,10 @@ fromText owner p = Parcel owner (x, y) plot linkMask links
         parseLinkLine :: T.Text -> (Char, T.Text)
         parseLinkLine line = (T.head begin, T.tail url)
             where (begin, url) = T.breakOn " " line
+    Just $ Parcel owner (x, y) plot linkMask links
 
 empty :: Parcel
-empty = fromText Nothing "0 0"
+empty = assume $ fromText Nothing "0 0"
 
 
 toTextLines :: Parcel -> [Text]

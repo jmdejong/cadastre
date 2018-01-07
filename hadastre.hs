@@ -5,9 +5,8 @@ import Control.Exception
 import Data.List
 import Data.Char
 import System.IO
-import System.Directory
+import qualified System.Directory as Dir
 import qualified Data.Map.Strict as Map
-import qualified Text.JSON as JSON
 import qualified Data.Aeson as Aeson
 import System.FilePath.Posix
 import qualified Parcel
@@ -44,6 +43,12 @@ appendFileIfReadable path iofiles =
 readFiles :: [FilePath] -> IO [(FilePath, T.Text)]
 readFiles = foldr appendFileIfReadable (return [])
 
+-- System.Directory.listDirectory is to new to use
+-- but this is the same code
+listDirectory :: FilePath -> IO [FilePath]
+listDirectory path =
+  (filter f) <$> (Dir.getDirectoryContents path)
+  where f filename = filename /= "." && filename /= ".."
 
 loadParcels :: IO Cadastre.Cadastre
 loadParcels = do

@@ -22,7 +22,6 @@ import Data.Bits
 import qualified Data.Binary as Bin
 import qualified Data.Array as Arr
 import qualified Data.ByteString.Lazy.Char8 as C
-import qualified Data.ByteArray as BA
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Scientific
 
@@ -67,18 +66,19 @@ seed :: Cadastre -> Int
 seed (Cadastre _ (Background s _)) = s
 
 fromTexts :: Int -> [(Maybe T.Text, T.Text)] -> Cadastre
-fromTexts seed texts = Cadastre (Map.fromList $ map parseText texts) (makeBackground seed)
+fromTexts seed texts = Cadastre (Map.fromList $ filterMaybe $ map parseText texts) (makeBackground seed)
     where
-        parseText (owner, text) = (Parcel.location parcel, parcel)
-            where 
-                parcel = Parcel.fromText owner text
+        parseText :: (Maybe T.Text, T.Text) -> Maybe (Pos, Parcel.Parcel)
+        parseText (owner, text) = case Parcel.fromText owner text of
+                                       Just parcel -> Just (Parcel.location parcel, parcel)
+                                       Nothing -> Nothing
 
 
 merge :: Cadastre -> Cadastre -> Cadastre
 merge (Cadastre oldP _) (Cadastre newP seed) = Cadastre mergedP seed
     where 
         mergedP = Map.filter isAllowed newP
-        isAllowed parcel = case oldP Map.!? (Parcel.location parcel) of 
+        isAllowed parcel = case Map.lookup (Parcel.location parcel) oldP of 
             Just p -> 
                 case (Parcel.owner parcel, Parcel.owner p) of
                      (Just o1, Just o2) -> o1 == o2

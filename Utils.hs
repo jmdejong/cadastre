@@ -4,7 +4,6 @@
 module Utils where
 
 
-import Crypto.Hash
 import System.IO.Unsafe
 import qualified Data.Text as T
 
@@ -36,4 +35,8 @@ debugPrint msg ret= unsafePerformIO $ do
     print msg
     return ret
 
+filterMaybe :: [Maybe a] -> [a]
+filterMaybe [] = []
+filterMaybe ((Just x):xs) = x:filterMaybe xs
+filterMaybe (Nothing:xs) = filterMaybe xs
 
