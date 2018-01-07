@@ -116,11 +116,11 @@ htmlEnd = "</body>\n<!-- Cadastre made by ~Troido; art by tilde.town users -->\n
 
 newline = "\n" :: T.Text
 
-toHtml :: Int -> Int -> Cadastre -> T.Text -- BU.ByteString
+toHtml :: Int -> Int -> Cadastre -> T.Text
 toHtml width height = makePage . T.intercalate newline . map T.concat . outputRegion htmlAtPos width height
     where makePage s = T.concat [htmlBegin, s, htmlEnd]
 
-htmlAtPos :: Cadastre -> Pos -> T.Text -- BU.ByteString --String
+htmlAtPos :: Cadastre -> Pos -> T.Text 
 htmlAtPos cadastre (x, y) = if localPos == (0,0) then T.append idSpan posString else posString
     where
         posString = case p of 
@@ -132,10 +132,14 @@ htmlAtPos cadastre (x, y) = if localPos == (0,0) then T.append idSpan posString 
         idSpan = "<span id=\"" `T.append` T.pack (show parcelX) `T.append` "," `T.append` T.pack (show parcelY) `T.append` "\"></span>"
 
 getBackground :: Int -> Int -> Cadastre -> Char
-getBackground x y (Cadastre _ (Background _ grid)) = C.index backgroundChars $ (`mod` 256) $ fromIntegral $ (Arr.!) grid $ fromIntegral $ (mod x 256) + 256 * (mod y 256)
-        
+getBackground x y (Cadastre _ (Background _ grid)) = getBackgroundChar $ (Arr.!) grid $ fromIntegral $ (mod x 256) + 256 * (mod y 256)
+
+
+getBackgroundChar :: Integral a => a -> Char
+getBackgroundChar i = C.index backgroundChars $ mod (fromIntegral i) 128
+
 backgroundChars :: C.ByteString
-backgroundChars = C.pack $ take 256 $ "' ' ' ' , , , , . . . . ` ` ` ` \" \"" ++ repeat ' '
+backgroundChars = C.pack $ take 128 $ "'',,..``\"" ++ repeat ' '
 
 
 galoisStep :: (Integral i, Bits i )=> i -> i

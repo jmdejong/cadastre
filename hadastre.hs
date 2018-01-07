@@ -13,7 +13,10 @@ import qualified Parcel
 import qualified Cadastre
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Data.ByteString.Lazy as BS
+import qualified Data.Text.Encoding as TE
+import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString as BS
+import qualified System.Random as Random
 import Utils
 
 
@@ -23,11 +26,12 @@ parcelPath :: String -> FilePath
 parcelPath user = "./home/" ++ user ++ "/.cadastre/home.txt"
 
 
+-- safely read a file: don't load too large files into memory
 readUtf8File :: FilePath -> IO T.Text
 readUtf8File path = do
     inputHandle <- openFile path ReadMode
-    hSetEncoding inputHandle utf8
-    TIO.hGetContents inputHandle
+    bytes <- BS.hGetNonBlocking inputHandle 8192
+    return $ TE.decodeUtf8 bytes
 
 appendFileIfReadable :: FilePath -> IO [(FilePath, T.Text)] -> IO [(FilePath, T.Text)]
 appendFileIfReadable path iofiles =
@@ -58,8 +62,9 @@ loadParcels = do
     let publicPaths = map ("./public/" ++) publicFiles
     let paths = userPaths ++ publicPaths ++ ["./adminparcel.prcl"] :: [FilePath]
     parcelTexts <- readFiles paths
+    r <- Random.randomIO :: IO Int
     return 
-        $ Cadastre.fromTexts 0
+        $ Cadastre.fromTexts r
             . map (\(path, text) -> (getOwnerFromPath path, text)) 
             $ parcelTexts
 
@@ -70,14 +75,14 @@ getOwnerFromPath path = case dropWhile (== ".") (splitDirectories path) of
     "adminparcel.prcl":[] -> Just "@_admin"
 
 makeJSONCadastre :: Cadastre.Cadastre -> BS.ByteString
-makeJSONCadastre = Aeson.encode
+makeJSONCadastre = BSL.toStrict . Aeson.encode
 
 
 decodeJSONCadastre :: BS.ByteString -> Cadastre.Cadastre
 decodeJSONCadastre jsonText = json
     where 
         Right json = decoded
-        decoded = (Aeson.eitherDecode jsonText :: Either String Cadastre.Cadastre)
+        decoded = Aeson.eitherDecode (BSL.fromStrict jsonText) :: Either String Cadastre.Cadastre
 
 readPreviousCadastre :: FilePath -> IO Cadastre.Cadastre
 readPreviousCadastre path = do
@@ -85,23 +90,22 @@ readPreviousCadastre path = do
     let parcels = decodeJSONCadastre jsonText
     return parcels
 
+writeSafe :: (FilePath -> a -> IO()) -> FilePath -> a -> IO()
+writeSafe writer path dat = do
+    let tempPath = path ++ ".tempfile"
+    writer tempPath dat
+    Dir.renameFile tempPath path
 
 main :: IO ()
 main = do
     p <- loadParcels
---     putStrLn $ makeJSONCadastre p
---     putStrLn $ Cadastre.toText 5 5 p
-    r <- readPreviousCadastre "town.json"
---     print r
-    let t = Cadastre.merge p r
+    r <- readPreviousCadastre "htown.json"
+    
+    let t = Cadastre.merge r p
     let json = makeJSONCadastre t
     let text = Cadastre.toText 25 25 t
     let html = Cadastre.toHtml 25 25 t
     
---     print $ length json
---     print $ length text
---     print $ BC.length html
-    
-    BS.writeFile "htown.json" json
-    TIO.writeFile "htown.txt" text
-    TIO.writeFile "htown.html" html
+    writeSafe BS.writeFile "htown.json" json
+    writeSafe TIO.writeFile "htown.txt" text
+    writeSafe TIO.writeFile "htown.html" html

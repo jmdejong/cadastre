@@ -56,12 +56,14 @@ instance Aeson.FromJSON Parcel where
 
 fromText :: Maybe T.Text -> T.Text -> Maybe Parcel
 fromText owner p = do
-    let (posl:l) = T.lines p
-        w = T.words posl
-    [sx, sy] <- if length w == 2 then Just w else Nothing
+    (posl,l) <- case T.lines p of 
+                     x:xs -> Just (x, xs)
+                     [] -> Nothing
+    (sx, sy) <- case T.words posl of
+                    [sx, sy] -> Just (sx, sy)
+                    _ -> Nothing
     x <- Text.Read.readMaybe $ T.unpack sx
     y <- Text.Read.readMaybe $ T.unpack sy
---         [x, y] = map (Text.Read.readMaybe . T.unpack) (T.words posl) :: [Int]
     let (plotLines, l') = splitAt parcelHeight l
         plot = (fillPlot parcelWidth parcelHeight plotLines) :: [T.Text]
         fillPlot :: Int -> Int -> [T.Text] -> [T.Text]
@@ -77,10 +79,13 @@ fromText owner p = do
             | otherwise = (fillPlot parcelWidth parcelHeight maskLines, makeLinkMap linkLines)
                 where (maskLines, linkLines) = splitAt parcelHeight rest
         makeLinkMap :: [T.Text] -> Map.Map Char T.Text
-        makeLinkMap = Map.fromList . map parseLinkLine . filter (/= "")
-        parseLinkLine :: T.Text -> (Char, T.Text)
-        parseLinkLine line = (T.head begin, T.tail url)
-            where (begin, url) = T.breakOn " " line
+        makeLinkMap = Map.fromList . filterMaybe . map parseLinkLine . filter (/= "")
+        parseLinkLine :: T.Text -> Maybe (Char, T.Text)
+        parseLinkLine line = do
+            let (begin, rest) = T.breakOn " " line
+            (char, _) <- T.uncons begin
+            (_, url) <- T.uncons rest
+            Just (char, url)
     Just $ Parcel owner (x, y) plot linkMask links
 
 empty :: Parcel
