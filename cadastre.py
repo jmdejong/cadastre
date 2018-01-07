@@ -216,8 +216,8 @@ a {text-decoration: none}
         if place in self.places:
             parcel = self.places[place]
             char = html.escape(parcel['art'][y%self.parcelheight][x%self.parcelwidth])
-            if 'linkmap' in parcel:
-                linkchar = parcel['linkmap'][y%self.parcelheight][x%self.parcelwidth]
+            if 'linkmask' in parcel:
+                linkchar = parcel['linkmask'][y%self.parcelheight][x%self.parcelwidth]
                 if linkchar in parcel["links"]:
                     url = html.escape(parcel["links"][linkchar], True)
                     r = '<a href="%s">%s</a>' % (url, char)
