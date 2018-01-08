@@ -20,8 +20,6 @@ import qualified System.Random as Random
 import Utils
 
 
-type Pos = (Int, Int)
-
 parcelPath :: String -> FilePath
 parcelPath user = "./home/" ++ user ++ "/.cadastre/home.txt"
 
@@ -54,7 +52,7 @@ listDirectory path =
   (filter f) <$> (Dir.getDirectoryContents path)
   where f filename = filename /= "." && filename /= ".."
 
-loadParcels :: IO Cadastre.Cadastre
+loadParcels :: IO [(Maybe T.Text, T.Text)]
 loadParcels = do
     userNames <- listDirectory "home"
     let userPaths = map parcelPath userNames
@@ -62,11 +60,8 @@ loadParcels = do
     let publicPaths = map ("./public/" ++) publicFiles
     let paths = userPaths ++ publicPaths ++ ["./adminparcel.prcl"] :: [FilePath]
     parcelTexts <- readFiles paths
-    r <- Random.randomIO :: IO Int
-    return 
-        $ Cadastre.fromTexts r
-            . map (\(path, text) -> (getOwnerFromPath path, text)) 
-            $ parcelTexts
+    let parcels = map (\(path, text) -> (getOwnerFromPath path, text)) parcelTexts
+    return parcels
 
 getOwnerFromPath :: FilePath -> Maybe T.Text
 getOwnerFromPath path = case dropWhile (== ".") (splitDirectories path) of
@@ -96,12 +91,16 @@ writeSafe writer path dat = do
     writer tempPath dat
     Dir.renameFile tempPath path
 
+
 main :: IO ()
 main = do
-    p <- loadParcels
-    r <- readPreviousCadastre "htown.json"
+    parcels <- loadParcels
+    previous <- readPreviousCadastre "town.json"
+    let reserved = Cadastre.getReservations previous
+    seed <- Random.randomIO :: IO Int
+    let cadastre = Cadastre.fromTexts seed parcels reserved
     
-    let t = Cadastre.merge r p
+    let t = cadastre
     let json = makeJSONCadastre t
     let text = Cadastre.toText 25 25 t
     let html = Cadastre.toHtml 25 25 t

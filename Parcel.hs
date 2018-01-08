@@ -29,8 +29,6 @@ import Data.Char
 import Data.List
 import Utils
 
-type Text = T.Text
-
 parcelWidth = 24
 parcelHeight = 12
 
@@ -39,7 +37,7 @@ data Parcel = Parcel
     , location :: Pos -- todo: make this a Maybe ?
     , art :: [T.Text]
     , linkmask :: [T.Text]
-    , links :: Map.Map Char Text
+    , links :: Map.Map Char T.Text
     } deriving (Generic, Show)
 --
 
@@ -92,7 +90,7 @@ empty :: Parcel
 empty = assume $ fromText Nothing "0 0"
 
 
-toTextLines :: Parcel -> [Text]
+toTextLines :: Parcel -> [T.Text]
 toTextLines parcel = art parcel
 
 hasOwner :: Parcel -> Bool
@@ -103,23 +101,23 @@ hasOwner parcel = case owner parcel of
 charAtPos :: Parcel -> Pos -> Char
 charAtPos parcel (x, y) = ((art parcel) !! y) `T.index` x
 
-linkAtPos :: Parcel -> Pos -> Maybe Text
+linkAtPos :: Parcel -> Pos -> Maybe T.Text
 linkAtPos parcel (x, y) = Map.lookup linkChar (links parcel)
     where linkChar = ((linkmask parcel) !! y) `T.index` x
 
 
-htmlAtPos :: Parcel -> Pos -> Text
+htmlAtPos :: Parcel -> Pos -> T.Text
 htmlAtPos parcel pos@(x, y) = wrapId $ wrapLink $ htmlEscape $ T.pack [charAtPos parcel pos]
     where
         wrapId :: T.Text -> T.Text
         wrapId s = case (pos, owner parcel) of
-            ((0, 0), Just o) -> "<span id=\"" `T.append` o `T.append` "\">" `T.append` s :: Text
-            ((23, 0), Just _) -> s `T.append` "</span>" :: Text
+            ((0, 0), Just o) -> "<span id=\"" `T.append` o `T.append` "\">" `T.append` s :: T.Text
+            ((23, 0), Just _) -> s `T.append` "</span>" :: T.Text
             _ -> s
         wrapLink :: T.Text -> T.Text
         wrapLink s = case linkAtPos parcel pos of
-            Just url -> "<a href=\"" `T.append` htmlEscape url `T.append` "\">" `T.append` s `T.append` "</a>" :: Text
-            Nothing -> s :: Text
+            Just url -> "<a href=\"" `T.append` htmlEscape url `T.append` "\">" `T.append` s `T.append` "</a>" :: T.Text
+            Nothing -> s :: T.Text
 
 place :: Parcel -> Pos -> Parcel
 place (Parcel owner _ plot linkMask links) pos = Parcel owner pos plot linkMask links

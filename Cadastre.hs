@@ -8,7 +8,7 @@ module Cadastre (
     fromTexts,
     toText,
     toHtml,
-    merge
+    getReservations
 ) where
 
 import GHC.Generics
@@ -16,7 +16,7 @@ import qualified Data.Text as T
 import qualified Parcel
 import Data.List
 import Utils
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Aeson as Aeson
 import Data.Bits
 import qualified Data.Binary as Bin
@@ -24,6 +24,7 @@ import qualified Data.Array as Arr
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Scientific
+import qualified Data.Maybe as Maybe
 
 data Cadastre = Cadastre 
     { parcels :: Map.Map Pos Parcel.Parcel
@@ -65,27 +66,24 @@ empty = Cadastre Map.empty (makeBackground 0)
 seed :: Cadastre -> Int
 seed (Cadastre _ (Background s _)) = s
 
-fromTexts :: Int -> [(Maybe T.Text, T.Text)] -> Cadastre
-fromTexts seed texts = Cadastre (Map.fromList $ filterMaybe $ map parseText texts) (makeBackground seed)
+fromTexts :: Int -> [(Maybe T.Text, T.Text)] -> Map.Map Pos T.Text -> Cadastre
+fromTexts seed texts reserved = Cadastre parcels (makeBackground seed)
     where
+        parcels = Map.fromListWith bestClaim $ filterMaybe $ map parseText texts
+        bestClaim a b = case (Parcel.owner a, Parcel.owner b) of
+            (Just "@_admin", _) -> a
+            (_, Just "@_admin") -> b
+            (Just o, Nothing) -> a
+            (Nothing, Just o) -> b
+            (Nothing, Nothing) -> a -- doesn't really matter which
+            (Just o1, Just o2) -> case Map.lookup (Parcel.location a) reserved of
+                Just owner | owner == o1 -> a
+                           | owner == o2 -> b
+                _ -> a
         parseText :: (Maybe T.Text, T.Text) -> Maybe (Pos, Parcel.Parcel)
         parseText (owner, text) = case Parcel.fromText owner text of
                                        Just parcel -> Just (Parcel.location parcel, parcel)
                                        Nothing -> Nothing
-
-
-merge :: Cadastre -> Cadastre -> Cadastre
-merge (Cadastre oldP _) (Cadastre newP seed) = Cadastre mergedP seed
-    where 
-        mergedP = Map.filter isAllowed newP
-        isAllowed parcel = case Map.lookup (Parcel.location parcel) oldP of 
-            Just p -> 
-                case (Parcel.owner parcel, Parcel.owner p) of
-                     (Just o1, Just o2) -> o1 == o2
-                     (Nothing, Just o2) -> False
-                     (_, Nothing) -> True
-            Nothing -> True
-
 
 toText :: Int -> Int -> Cadastre -> T.Text
 toText width height = T.unlines . map T.pack . outputRegion charAtPos width height
@@ -130,6 +128,10 @@ htmlAtPos cadastre (x, y) = if localPos == (0,0) then T.append idSpan posString 
         parcelPos@(parcelX, parcelY) = (div x Parcel.parcelWidth, div y Parcel.parcelHeight)
         p = Map.lookup parcelPos (parcels cadastre)
         idSpan = "<span id=\"" `T.append` T.pack (show parcelX) `T.append` "," `T.append` T.pack (show parcelY) `T.append` "\"></span>"
+
+getReservations :: Cadastre -> Map.Map Pos T.Text
+getReservations = Map.map (\(Just x) -> x) . Map.filter Maybe.isJust . Map.map Parcel.owner . parcels
+
 
 getBackground :: Int -> Int -> Cadastre -> Char
 getBackground x y (Cadastre _ (Background _ grid)) = getBackgroundChar $ (Arr.!) grid $ fromIntegral $ (mod x 256) + 256 * (mod y 256)
