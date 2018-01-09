@@ -105,6 +105,6 @@ main = do
     let text = Cadastre.toText 25 25 t
     let html = Cadastre.toHtml 25 25 t
     
-    writeSafe BS.writeFile "htown.json" json
-    writeSafe TIO.writeFile "htown.txt" text
-    writeSafe TIO.writeFile "htown.html" html
+    writeSafe BS.writeFile "town.json" json
+    writeSafe TIO.writeFile "town.txt" text
+    writeSafe TIO.writeFile "town.html" html

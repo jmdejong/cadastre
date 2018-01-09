@@ -19,7 +19,6 @@ module Parcel (
 ) where
 --
 
-
 import GHC.Generics
 import qualified Data.Text as T
 import qualified Data.Aeson as Aeson
@@ -91,10 +90,6 @@ fromText owner p = do
 replaceHalfWidth :: Char -> Char
 replaceHalfWidth c | (TW.wcwidth c) == 1 = c
                    | otherwise = ' '
-
-isHalfWidth :: Char -> Bool
-isHalfWidth = (== 1) . TW.wcwidth
-
 
 empty :: Parcel
 empty = assume $ fromText Nothing "0 0"
