@@ -28,6 +28,7 @@ import qualified Text.Read
 import Data.Char
 import Data.List
 import Utils
+import qualified Graphics.Text.Width as TW
 
 parcelWidth = 24
 parcelHeight = 12
@@ -63,7 +64,7 @@ fromText owner p = do
     x <- Text.Read.readMaybe $ T.unpack sx
     y <- Text.Read.readMaybe $ T.unpack sy
     let (plotLines, l') = splitAt parcelHeight l
-        plot = (fillPlot parcelWidth parcelHeight plotLines) :: [T.Text]
+        plot = (fillPlot parcelWidth parcelHeight $ map (T.map replaceHalfWidth) plotLines) :: [T.Text]
         fillPlot :: Int -> Int -> [T.Text] -> [T.Text]
         fillPlot width height p = take height . map (fillLines width) $ p ++ repeat T.empty
         fillLines :: Int -> T.Text -> T.Text
@@ -85,6 +86,15 @@ fromText owner p = do
             (_, url) <- T.uncons rest
             Just (char, url)
     Just $ Parcel owner (x, y) plot linkMask links
+
+
+replaceHalfWidth :: Char -> Char
+replaceHalfWidth c | (TW.wcwidth c) == 1 = c
+                   | otherwise = ' '
+
+isHalfWidth :: Char -> Bool
+isHalfWidth = (== 1) . TW.wcwidth
+
 
 empty :: Parcel
 empty = assume $ fromText Nothing "0 0"
