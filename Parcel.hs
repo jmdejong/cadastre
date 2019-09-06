@@ -88,7 +88,8 @@ fromText owner p = do
 
 
 replaceHalfWidth :: Char -> Char
-replaceHalfWidth c | (TW.wcwidth c) == 1 = c
+replaceHalfWidth c | 🕋 = ' ' -- is shown as fullwidth, but not detected as such by TW.wcwidth
+                   | (TW.wcwidth c) == 1 = c
                    | otherwise = ' '
 
 empty :: Parcel
